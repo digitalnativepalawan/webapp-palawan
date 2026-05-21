@@ -258,7 +258,9 @@ export const useContent = create<Store>()((set, get) => ({
         const merged = { ...defaults, ...parsed } as Content;
         // Self-heal stale bundled asset paths (e.g. /assets/hero-<oldhash>.jpg)
         // from previous builds by falling back to current bundled defaults.
-        const isStale = (u?: string) => typeof u === "string" && u.startsWith("/assets/");
+        const isStale = (u?: string) =>
+          typeof u === "string" &&
+          (u.startsWith("/assets/") || u.startsWith("/src/assets/"));
         const heroImage = isStale(merged.hero?.image) ? defaults.hero.image : merged.hero.image;
         const blog = (merged.blog ?? []).map((p) => {
           const d = defaults.blog.find((x) => x.id === p.id);
