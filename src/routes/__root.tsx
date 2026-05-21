@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -8,6 +9,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
+import { useContent } from "@/store/content";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -72,20 +74,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "merQato.digital — Tropical Digital Infrastructure" },
+      { name: "description", content: "Building operational systems from paradise. Digital infrastructure studio in Palawan, Philippines." },
+      { property: "og:title", content: "merQato.digital — Tropical Digital Infrastructure" },
+      { property: "og:description", content: "Building operational systems from paradise. Digital infrastructure studio in Palawan, Philippines." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "merQato.digital — Tropical Digital Infrastructure" },
+      { name: "twitter:description", content: "Building operational systems from paradise. Digital infrastructure studio in Palawan, Philippines." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/00234aec-3a90-4ad1-8cab-f8cf0e12e595" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/00234aec-3a90-4ad1-8cab-f8cf0e12e595" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" },
     ],
   }),
   shellComponent: RootShell,
@@ -110,6 +114,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const load = useContent((s) => s.load);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   return (
     <QueryClientProvider client={queryClient}>
