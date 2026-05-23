@@ -262,22 +262,50 @@ type Store = {
   content: Content;
   loaded: boolean;
   saving: boolean;
+  theme: "dark" | "light";
   setContent: (c: Content) => void;
   update: <K extends keyof Content>(key: K, value: Content[K]) => void;
   reset: () => void;
+  setTheme: (t: "dark" | "light") => void;
+  toggleTheme: () => void;
   load: () => Promise<void>;
   save: (passkey: string, c: Content) => Promise<void>;
 };
 
 export const defaultContent = defaults;
 
+const THEME_KEY = "mq-theme";
+const getInitialTheme = (): "dark" | "light" => {
+  if (typeof window === "undefined") return "dark";
+  try {
+    const v = window.localStorage.getItem(THEME_KEY);
+    return v === "light" ? "light" : "dark";
+  } catch {
+    return "dark";
+  }
+};
+const applyTheme = (t: "dark" | "light") => {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  if (t === "light") root.classList.add("light");
+  else root.classList.remove("light");
+  try { window.localStorage.setItem(THEME_KEY, t); } catch {}
+};
+
 export const useContent = create<Store>()((set, get) => ({
   content: defaults,
   loaded: false,
   saving: false,
+  theme: getInitialTheme(),
   setContent: (c) => set({ content: c }),
   update: (key, value) => set((s) => ({ content: { ...s.content, [key]: value } })),
   reset: () => set({ content: defaults }),
+  setTheme: (t) => { applyTheme(t); set({ theme: t }); },
+  toggleTheme: () => {
+    const next = get().theme === "dark" ? "light" : "dark";
+    applyTheme(next);
+    set({ theme: next });
+  },
   load: async () => {
     if (get().loaded) return;
     try {
