@@ -120,10 +120,18 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const load = useContent((s) => s.load);
+  const setTheme = useContent((s) => s.setTheme);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem("mq-theme");
+      setTheme(v === "light" ? "light" : "dark");
+    } catch {}
+  }, [setTheme]);
 
   return (
     <QueryClientProvider client={queryClient}>
