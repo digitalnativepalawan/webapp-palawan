@@ -275,15 +275,7 @@ type Store = {
 export const defaultContent = defaults;
 
 const THEME_KEY = "mq-theme";
-const getInitialTheme = (): "dark" | "light" => {
-  if (typeof window === "undefined") return "dark";
-  try {
-    const v = window.localStorage.getItem(THEME_KEY);
-    return v === "light" ? "light" : "dark";
-  } catch {
-    return "dark";
-  }
-};
+const getInitialTheme = (): "dark" | "light" => "dark";
 const applyTheme = (t: "dark" | "light") => {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
