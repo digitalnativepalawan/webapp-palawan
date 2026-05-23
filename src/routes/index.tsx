@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { ArrowUpRight, Github, Instagram, Linkedin, Twitter, Triangle, Mail, Globe, Building2, X, Facebook, Youtube, Music2 } from "lucide-react";
+import { ArrowUpRight, Github, Instagram, Linkedin, Twitter, Triangle, Mail, Globe, Building2, X, Facebook, Youtube, Music2, Sun, Moon } from "lucide-react";
 import { useContent, type BlogPost, type PortfolioItem } from "@/store/content";
 import { AdminTrigger } from "@/components/AdminPanel";
 import mqLogo from "@/assets/mq-logo.png";
@@ -19,6 +19,8 @@ function Dot({ className = "" }: { className?: string }) {
 function Header() {
   const { content } = useContent();
   const h = content.header;
+  const theme = useContent((s) => s.theme);
+  const toggleTheme = useContent((s) => s.toggleTheme);
   return (
     <>
     <header className="grid grid-cols-12 gap-3 md:gap-4 px-4 md:px-6 lg:px-10 pt-5 md:pt-6 pb-4 text-[10px] uppercase tracking-[0.14em]">
@@ -29,7 +31,16 @@ function Header() {
         </Link>
       </div>
       <div className="col-span-4 md:hidden flex justify-end">
-        <MQLogo className="w-9 h-auto" />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            className="border border-line p-1.5 text-ink-dim hover:text-accent hover:border-accent transition-colors"
+          >
+            {theme === "dark" ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
+          </button>
+          <MQLogo className="w-9 h-auto" />
+        </div>
       </div>
       <div className="hidden md:flex col-span-6 md:col-span-4 items-start justify-center gap-6">
         <span className="text-ink border-b border-ink">HOME</span>
@@ -39,7 +50,14 @@ function Header() {
         <div className="text-ink flex md:justify-end items-center gap-1.5">{h.rightLine1}<Dot /></div>
         <div className="text-ink-mute mt-0.5">{h.rightLine2}</div>
       </div>
-      <div className="hidden md:flex col-span-1 justify-end">
+      <div className="hidden md:flex col-span-1 justify-end items-start gap-2">
+        <button
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+          className="border border-line p-1.5 text-ink-dim hover:text-accent hover:border-accent transition-colors"
+        >
+          {theme === "dark" ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
+        </button>
         <MQLogo className="w-12 h-auto" />
       </div>
     </header>
