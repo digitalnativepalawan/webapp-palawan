@@ -73,8 +73,8 @@ function Hero() {
       <div className="corner border border-line relative overflow-hidden">
         <div className="c1" /><div className="c2" />
         <div className="relative aspect-[3/4] sm:aspect-[16/10] md:aspect-[16/8]">
-          <img src={h.image} alt="Palawan sunset" className="absolute inset-0 w-full h-full object-cover opacity-90" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/20 to-background/70" />
+          <img src={h.image} alt="Palawan sunset" className="img-crisp absolute inset-0 w-full h-full object-cover opacity-90" />
+          <div className="img-veil-hero absolute inset-0" />
 
           {/* mobile-only minimal top meta */}
           <div className="md:hidden absolute top-3 left-3 right-3 flex items-start justify-between text-[9px] uppercase tracking-[0.14em]">
@@ -149,7 +149,7 @@ function Hero() {
           <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
             <MQLogo className="w-24 sm:w-32 md:w-40 lg:w-48 h-auto mb-4 md:mb-6" />
             <div className="label text-[9px] md:text-[10px] mb-2 md:mb-3">{h.overline}</div>
-            <h1 className="font-serif text-4xl xs:text-5xl sm:text-6xl md:text-8xl lg:text-9xl text-ink leading-[0.95]">{h.title}</h1>
+            <h1 className="hero-title font-serif text-4xl xs:text-5xl sm:text-6xl md:text-8xl lg:text-9xl text-ink leading-[0.95]">{h.title}</h1>
             <div className="mt-4 md:mt-6 text-[9px] md:text-[10px] uppercase tracking-[0.22em] text-ink-dim">
               <div>{h.subtitle1}</div>
               <div>{h.subtitle2}</div>
@@ -200,9 +200,9 @@ function BlogCard({ post, onOpen }: { post: BlogPost; onOpen: (p: BlogPost) => v
         ) : post.videoUrl ? (
           <video src={post.videoUrl} className="absolute inset-0 w-full h-full object-cover" muted loop playsInline autoPlay />
         ) : (
-          <img src={post.image} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+          <img src={post.image} alt="" className="img-crisp absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/10 to-background/30" />
+        <div className="img-veil-card absolute inset-0" />
         <div className="absolute top-3 left-3 text-[10px] uppercase tracking-[0.14em] text-accent">{post.category}</div>
         <div className="absolute top-3 right-3 text-[10px] uppercase tracking-[0.14em] text-right text-ink-dim leading-relaxed">
           <div>{post.meta1}</div>
