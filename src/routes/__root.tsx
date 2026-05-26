@@ -11,6 +11,7 @@ import {
 
 import { useContent } from "@/store/content";
 import appCss from "../styles.css?url";
+import PreviewHealth from "@/components/PreviewHealth";
 
 function NotFoundComponent() {
   return (
@@ -136,6 +137,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <PreviewHealth />
     </QueryClientProvider>
   );
 }

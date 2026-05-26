@@ -4,7 +4,7 @@ import {
   ArrowUpRight, Terminal, Cpu, GitBranch, CheckCircle2, Circle,
   Loader2, Send, ChevronRight, Activity, Box, Layers, Globe,
   Github, MessageSquare, Zap, Clock, Database, Shield, Wifi,
-  X, Minimize2, Maximize2,
+  X, Minimize2, Maximize2, Mail,
 } from "lucide-react";
 import mqLogo from "@/assets/mq-logo.png";
 import { chatWithAgent } from "@/lib/agent.functions";
