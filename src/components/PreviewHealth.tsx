@@ -1,20 +1,25 @@
-import { useEffect, useState } from "react";
 import { X, Activity } from "lucide-react";
+import { useEffect, useState } from "react";
 
-const BUILD_ID =
-  (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_BUILD_ID ||
-  new Date().toISOString().slice(0, 19).replace("T", " ");
+const STATIC_BUILD_ID =
+  (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_BUILD_ID || "";
 
 type RuntimeError = { msg: string; at: string };
 
 export default function PreviewHealth() {
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(true);
+  const [buildId, setBuildId] = useState(STATIC_BUILD_ID);
   const [loaded, setLoaded] = useState(false);
   const [loadedAt, setLoadedAt] = useState<string | null>(null);
   const [errors, setErrors] = useState<RuntimeError[]>([]);
   const [inIframe, setInIframe] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    if (!STATIC_BUILD_ID) {
+      setBuildId(new Date().toISOString().slice(0, 19).replace("T", " "));
+    }
     try {
       setInIframe(window.self !== window.top);
     } catch {
@@ -47,6 +52,9 @@ export default function PreviewHealth() {
       window.removeEventListener("unhandledrejection", onRejection);
     };
   }, []);
+
+  // Avoid SSR/CSR hydration mismatch — only render after client mount.
+  if (!mounted) return null;
 
   if (!open) {
     return (
