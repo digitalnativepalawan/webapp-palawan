@@ -43,6 +43,8 @@ Rules:
 
 const OPENROUTER_MODEL = "google/gemma-2-2b-it:free";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const LOVABLE_AI_MODEL = "google/gemini-2.5-flash";
 
 function getOllamaUrl() {
   return process.env.OLLAMA_URL || "http://localhost:11434";
@@ -53,7 +55,8 @@ function getOllamaModel() {
 }
 
 async function callOpenRouter(messages: Message[], systemPrompt: string) {
-  const openrouterKey = process.env.OPENROUTER_API_KEY;
+  const openrouterKey =
+    process.env.OPENROUTER_API_KEY || process.env.openrouter_api_key;
   if (!openrouterKey) return null;
 
   const response = await fetch(OPENROUTER_URL, {
@@ -77,6 +80,34 @@ async function callOpenRouter(messages: Message[], systemPrompt: string) {
   if (!response.ok) {
     const errText = await response.text().catch(() => "");
     throw new Error(`OpenRouter HTTP ${response.status}: ${errText}`);
+  }
+
+  const json = await response.json();
+  return json.choices?.[0]?.message?.content || "";
+}
+
+async function callLovableAI(messages: Message[], systemPrompt: string) {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) return null;
+
+  const response = await fetch(LOVABLE_AI_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      model: LOVABLE_AI_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => "");
+    throw new Error(`Lovable AI HTTP ${response.status}: ${errText}`);
   }
 
   const json = await response.json();
@@ -122,7 +153,15 @@ export const chatWithAgent = createServerFn({ method: "POST" })
     );
     const systemPrompt = isWorkspace ? WORKSPACE_SYSTEM_PROMPT : AGENTS_SYSTEM_PROMPT;
 
-    // ── Try OpenRouter first ──
+    // ── Try Lovable AI Gateway first (always available) ──
+    try {
+      const content = await callLovableAI(recentMessages, systemPrompt);
+      if (content) return { content, ok: true };
+    } catch (err) {
+      console.error("Lovable AI error:", err);
+    }
+
+    // ── Fallback: OpenRouter ──
     try {
       const content = await callOpenRouter(recentMessages, systemPrompt);
       if (content) return { content, ok: true };
