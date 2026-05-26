@@ -94,7 +94,7 @@ export default function PreviewHealth() {
         <Row label="Status" value={<span className={statusColor}>{statusLabel}</span>} />
         <Row label="Iframe" value={inIframe ? "EMBEDDED" : "TOP-LEVEL"} />
         <Row label="Loaded" value={loaded ? loadedAt ?? "YES" : "PENDING"} />
-        <Row label="Build" value={<span className="normal-case tracking-normal">{BUILD_ID}</span>} />
+        <Row label="Build" value={<span className="normal-case tracking-normal">{buildId || "—"}</span>} />
         <Row label="Errors" value={String(errors.length)} />
       </div>
       {errors.length > 0 && (
