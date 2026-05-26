@@ -9,13 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WorkspaceRouteImport } from './routes/workspace'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as DisclaimerRouteImport } from './routes/disclaimer'
-import { Route as WorkspaceRouteImport } from './routes/workspace'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
 
+const WorkspaceRoute = WorkspaceRouteImport.update({
+  id: '/workspace',
+  path: '/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -29,11 +34,6 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const DisclaimerRoute = DisclaimerRouteImport.update({
   id: '/disclaimer',
   path: '/disclaimer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WorkspaceRoute = WorkspaceRouteImport.update({
-  id: '/workspace',
-  path: '/workspace',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentsRoute = AgentsRouteImport.update({
@@ -50,47 +50,67 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
-  '/workspace': typeof WorkspaceRoute
   '/disclaimer': typeof DisclaimerRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/workspace': typeof WorkspaceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
-  '/workspace': typeof WorkspaceRoute
   '/disclaimer': typeof DisclaimerRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/workspace': typeof WorkspaceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
-  '/workspace': typeof WorkspaceRoute
   '/disclaimer': typeof DisclaimerRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/workspace': typeof WorkspaceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/agents' | '/workspace' | '/disclaimer' | '/privacy' | '/terms'
+  fullPaths:
+    | '/'
+    | '/agents'
+    | '/disclaimer'
+    | '/privacy'
+    | '/terms'
+    | '/workspace'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agents' | '/workspace' | '/disclaimer' | '/privacy' | '/terms'
-  id: '__root__' | '/' | '/agents' | '/workspace' | '/disclaimer' | '/privacy' | '/terms'
+  to: '/' | '/agents' | '/disclaimer' | '/privacy' | '/terms' | '/workspace'
+  id:
+    | '__root__'
+    | '/'
+    | '/agents'
+    | '/disclaimer'
+    | '/privacy'
+    | '/terms'
+    | '/workspace'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgentsRoute: typeof AgentsRoute
-  WorkspaceRoute: typeof WorkspaceRoute
   DisclaimerRoute: typeof DisclaimerRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
+  WorkspaceRoute: typeof WorkspaceRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/workspace': {
+      id: '/workspace'
+      path: '/workspace'
+      fullPath: '/workspace'
+      preLoaderRoute: typeof WorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -110,13 +130,6 @@ declare module '@tanstack/react-router' {
       path: '/disclaimer'
       fullPath: '/disclaimer'
       preLoaderRoute: typeof DisclaimerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/workspace': {
-      id: '/workspace'
-      path: '/workspace'
-      fullPath: '/workspace'
-      preLoaderRoute: typeof WorkspaceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agents': {
@@ -139,10 +152,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentsRoute: AgentsRoute,
-  WorkspaceRoute: WorkspaceRoute,
   DisclaimerRoute: DisclaimerRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
+  WorkspaceRoute: WorkspaceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
