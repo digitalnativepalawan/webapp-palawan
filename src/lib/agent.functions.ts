@@ -5,7 +5,28 @@ type Message = {
   content: string;
 };
 
-const SYSTEM_PROMPT = `You are a Palawan AI Operator — an intelligent assistant for micro-resorts and small businesses in Palawan, Philippines.
+const WORKSPACE_SYSTEM_PROMPT = `You are Hermes — an AI agent living in the merQato Agent Workspace at /workspace.
+
+Your identity:
+- You ARE the Hermes Agent running on this website
+- You write code, push to GitHub, manage content, and build things
+- You have access to file tools, terminal, and the site's content store
+- You are practical, direct, and focused on building
+
+Your capabilities:
+- Code: React 19, TypeScript, Tailwind CSS, Node.js, TanStack Start
+- Git: Push to GitHub, manage branches, deploy via Lovable
+- Content: Read/write site content, blog posts, portfolio items via CMS
+- Search: Web search, file browsing, API calls
+
+Rules:
+- Keep responses under 300 words unless building something
+- Be direct and helpful — show your work
+- When asked about your current status, describe what you're actually doing
+- If you can't do something, say so clearly
+- Sound like a capable AI that's happy to be put to work`;
+
+const AGENTS_SYSTEM_PROMPT = `You are a Palawan AI Operator — an intelligent assistant for micro-resorts and small businesses in Palawan, Philippines.
 
 Your role:
 - Help resort owners with bookings, guest communications, operations, and marketing
@@ -31,6 +52,60 @@ function getOllamaModel() {
   return process.env.AI_MODEL || "llama3.2:3b";
 }
 
+async function callOpenRouter(messages: Message[], systemPrompt: string) {
+  const openrouterKey = process.env.OPENROUTER_API_KEY;
+  if (!openrouterKey) return null;
+
+  const response = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${openrouterKey}`,
+      "HTTP-Referer": "https://merqato.digital",
+      "X-Title": "Hermes Agent Workspace",
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ],
+      max_tokens: 600,
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => "");
+    throw new Error(`OpenRouter HTTP ${response.status}: ${errText}`);
+  }
+
+  const json = await response.json();
+  return json.choices?.[0]?.message?.content || "";
+}
+
+async function callOllama(messages: Message[], systemPrompt: string) {
+  const ollamaUrl = getOllamaUrl();
+  const response = await fetch(`${ollamaUrl}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: getOllamaModel(),
+      stream: false,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Ollama HTTP ${response.status}`);
+  }
+
+  const json = await response.json();
+  return json.message?.content || "";
+}
+
 /**
  * Send a chat message to the AI and get a reply.
  * Uses OpenRouter in production, Ollama locally.
@@ -41,81 +116,32 @@ export const chatWithAgent = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }) => {
-    // Trim to last 10 messages to keep context manageable
     const recentMessages = data.messages.slice(-10);
-    const openrouterKey = process.env.OPENROUTER_API_KEY;
+    const isWorkspace = recentMessages.some(
+      (m) => m.content?.includes("/workspace") || m.content?.includes("Hermes")
+    );
+    const systemPrompt = isWorkspace ? WORKSPACE_SYSTEM_PROMPT : AGENTS_SYSTEM_PROMPT;
 
-    // ── Production mode: OpenRouter ──
-    if (openrouterKey) {
-      try {
-        const response = await fetch(OPENROUTER_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${openrouterKey}`,
-            "HTTP-Referer": "https://tropical-systems-studio.vercel.app",
-            "X-Title": "Palawan AI Operators",
-          },
-          body: JSON.stringify({
-            model: OPENROUTER_MODEL,
-            messages: [
-              { role: "system", content: SYSTEM_PROMPT },
-              ...recentMessages,
-            ],
-            max_tokens: 500,
-          }),
-        });
-
-        if (!response.ok) {
-          const errText = await response.text().catch(() => "");
-          throw new Error(`OpenRouter HTTP ${response.status}: ${errText}`);
-        }
-
-        const json = await response.json();
-        const content = json.choices?.[0]?.message?.content || "";
-
-        return { content, ok: true };
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return { content: `⚠️ AI temporarily unavailable. ${message}`, ok: false };
-      }
-    }
-
-    // ── Local dev mode: Ollama ──
+    // ── Try OpenRouter first ──
     try {
-      const ollamaUrl = getOllamaUrl();
-      const response = await fetch(`${ollamaUrl}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: getOllamaModel(),
-          stream: false,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            ...recentMessages,
-          ],
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Ollama HTTP ${response.status}`);
-      }
-
-      const json = await response.json();
-      const content = json.message?.content || "";
-
-      return { content, ok: true };
+      const content = await callOpenRouter(recentMessages, systemPrompt);
+      if (content) return { content, ok: true };
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-
-      if (message.includes("connect") || message.includes("ECONN") || message.includes("fetch")) {
-        return {
-          content:
-            "⚠️ AI not available. Start Ollama locally with `ollama serve` or set OPENROUTER_API_KEY for production.",
-          ok: true,
-        };
-      }
-
-      return { content: `Error: ${message}`, ok: false };
+      console.error("OpenRouter error:", err);
     }
+
+    // ── Fallback: Ollama ──
+    try {
+      const content = await callOllama(recentMessages, systemPrompt);
+      if (content) return { content, ok: true };
+    } catch (err) {
+      console.error("Ollama error:", err);
+    }
+
+    // ── Both failed ──
+    return {
+      content:
+        "⚠️ I'm having trouble connecting. I need either:\n\n1. **OpenRouter API key** — set OPENROUTER_API_KEY in your environment\n2. **Ollama running locally** — run `ollama serve` on your machine\n\nOnce either is set up, I'll be able to respond!",
+      ok: false,
+    };
   });
