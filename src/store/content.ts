@@ -61,6 +61,18 @@ export type LegalContent = {
   footerSnippet: string;
 };
 
+export type PricingTier = {
+  id: string;
+  name: string;
+  price: string;
+  period: string;
+  desc: string;
+  features: string[];
+  highlighted: boolean;
+  buttonText: string;
+  buttonLink: string;
+};
+
 export type Content = {
   header: {
     brand: string;
@@ -126,6 +138,9 @@ export type Content = {
     socials: SocialLink[];
   };
   legal: LegalContent;
+  pricingTitle: string;
+  pricingSubtitle: string;
+  pricing: PricingTier[];
 };
 
 const defaults: Content = {
@@ -256,6 +271,43 @@ const defaults: Content = {
     disclaimer: `<h1>Disclaimer</h1>\n<p><em>Last updated: [Insert Date]</em></p>\n\n<h2>1. General Information</h2>\n<p>The information provided by <strong>[Insert Company Name]</strong> on <strong>[Insert Website URL]</strong> is for general informational purposes only. All information on the Site is provided in good faith; however, we make no representation or warranty of any kind, express or implied, regarding the accuracy, adequacy, validity, reliability, availability, or completeness of any information on the Site.</p>\n\n<h2>2. "As-Is" Disclaimer</h2>\n<p>The Site and its contents are provided on an <strong>"as-is" and "as-available"</strong> basis. Under no circumstance shall we have any liability to you for any loss or damage of any kind incurred as a result of the use of the Site or reliance on any information provided. Your use of the Site and your reliance on any information is solely at your own risk.</p>\n\n<h2>3. Professional Advice Disclaimer</h2>\n<p>The Site cannot and does not contain [legal / medical / financial / professional] advice. Any information is provided for general informational and educational purposes only and is not a substitute for professional advice. You should consult the appropriate professional before taking any action.</p>\n\n<h2>4. Third-Party Links</h2>\n<p>The Site may contain links to other websites or content belonging to or originating from third parties. We do not investigate, monitor, or check such external links for accuracy, adequacy, validity, reliability, availability, or completeness. We do not warrant, endorse, guarantee, or assume responsibility for any information offered by third-party websites linked from the Site.</p>\n\n<h2>5. Errors and Omissions</h2>\n<p>While we strive to keep the information on the Site current and accurate, errors can occur. We are not responsible for any errors or omissions, or for the results obtained from the use of this information.</p>\n\n<h2>6. Contact</h2>\n<p>Questions about this Disclaimer can be sent to <strong>[Insert Contact Email]</strong>.</p>`,
     footerSnippet: `<footer class="site-footer">\n  <p>&copy; [Insert Year] <strong>[Insert Company Name]</strong>. All rights reserved.</p>\n  <p>[Insert Product or Brand Name]&trade; is a trademark of [Insert Company Name].</p>\n  <nav class="site-footer__links">\n    <a href="/privacy">Privacy Policy</a> ·\n    <a href="/terms">Terms of Service</a> ·\n    <a href="/disclaimer">Disclaimer</a> ·\n    <a href="/contact">Contact</a>\n  </nav>\n</footer>`,
   },
+  pricingTitle: "Simple & Transparent",
+  pricingSubtitle: "All packages include hosting, updates, and support.",
+  pricing: [
+    {
+      id: "p1",
+      name: "Starter",
+      price: "₱12,000",
+      period: "one-time + ₱1,500/mo",
+      desc: "Best for small resorts and eateries getting started",
+      features: ["Basic website + AI chat", "Menu digitization (1 menu)", "Guest message auto-reply", "Hosting + updates included"],
+      highlighted: false,
+      buttonText: "Get Started",
+      buttonLink: "#contact-form",
+    },
+    {
+      id: "p2",
+      name: "Full Operator",
+      price: "₱25,000",
+      period: "one-time + ₱3,500/mo",
+      desc: "Best for growing properties that need full coverage",
+      features: ["Everything in Starter", "24/7 multi-channel concierge", "Smart operations dashboard", "Marketing post generator", "Inventory alerts"],
+      highlighted: true,
+      buttonText: "Get Started",
+      buttonLink: "#contact-form",
+    },
+    {
+      id: "p3",
+      name: "Enterprise",
+      price: "Custom",
+      period: "multiple properties",
+      desc: "Best for groups and multi-property operations",
+      features: ["Everything in Full Operator", "Multi-property management", "Custom integrations", "Dedicated account manager", "Priority support"],
+      highlighted: false,
+      buttonText: "Contact Us",
+      buttonLink: "#contact-form",
+    },
+  ],
 };
 
 type Store = {

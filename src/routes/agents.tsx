@@ -3,7 +3,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import {
   ArrowUpRight, Camera, MessageCircle, ClipboardList,
   Wifi, Heart, Users, TrendingUp,
-  Star, Check, ChevronRight, X, Globe, Mail, Building2,
+  Star, Check, CheckCircle2, ChevronRight, X, Globe, Mail, Building2,
   Github, Triangle, Instagram, Twitter, Linkedin, Loader2,
 } from "lucide-react";
 import mqLogo from "@/assets/mq-logo.png";
@@ -412,88 +412,148 @@ function DemoChat() {
 
 // ────── Pricing ──────
 
-const tiers = [
-  {
-    name: "Starter",
-    price: "₱12,000",
-    period: "one-time + ₱1,500/mo",
-    desc: "Best for small resorts and eateries getting started",
-    features: ["Basic website + AI chat", "Menu digitization (1 menu)", "Guest message auto-reply", "Hosting + updates included"],
-    highlighted: false,
-  },
-  {
-    name: "Full Operator",
-    price: "₱25,000",
-    period: "one-time + ₱3,500/mo",
-    desc: "Best for growing properties that need full coverage",
-    features: ["Everything in Starter", "24/7 multi-channel concierge", "Smart operations dashboard", "Marketing post generator", "Inventory alerts"],
-    highlighted: true,
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    period: "multiple properties",
-    desc: "Best for groups and multi-property operations",
-    features: ["Everything in Full Operator", "Multi-property management", "Custom integrations", "Dedicated account manager", "Priority support"],
-    highlighted: false,
-  },
-];
+function ContactForm({ onClose }: { onClose: () => void }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [resort, setResort] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+    setTimeout(() => onClose(), 2500);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[90] bg-background/90 backdrop-blur-sm flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="corner border border-line bg-surface w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="c1" /><div className="c2" />
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="label text-accent mb-1">/ GET STARTED</div>
+              <h3 className="font-serif text-xl text-ink">Contact the merQato Team</h3>
+            </div>
+            <button onClick={onClose} className="text-ink-dim hover:text-accent p-1">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {submitted ? (
+            <div className="text-center py-8">
+              <CheckCircle2 className="w-10 h-10 text-accent mx-auto mb-3" />
+              <div className="font-serif text-xl text-ink mb-2">Message Sent!</div>
+              <div className="text-ink-dim text-[12px]">We'll get back to you within 24 hours.</div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div>
+                <label className="label block mb-1">YOUR NAME</label>
+                <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Juan Dela Cruz" className="w-full bg-background border border-line px-3 py-2.5 text-ink text-[12px] placeholder:text-ink-mute outline-none focus:border-accent" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label block mb-1">EMAIL</label>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@email.com" className="w-full bg-background border border-line px-3 py-2.5 text-ink text-[12px] placeholder:text-ink-mute outline-none focus:border-accent" />
+                </div>
+                <div>
+                  <label className="label block mb-1">PHONE</label>
+                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+63 912 345 6789" className="w-full bg-background border border-line px-3 py-2.5 text-ink text-[12px] placeholder:text-ink-mute outline-none focus:border-accent" />
+                </div>
+              </div>
+              <div>
+                <label className="label block mb-1">RESORT / BUSINESS NAME</label>
+                <input value={resort} onChange={(e) => setResort(e.target.value)} placeholder="Sunset Bay Resort" className="w-full bg-background border border-line px-3 py-2.5 text-ink text-[12px] placeholder:text-ink-mute outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="label block mb-1">HOW CAN WE HELP?</label>
+                <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4} placeholder="Tell us about your property and what you need..." className="w-full bg-background border border-line px-3 py-2.5 text-ink text-[12px] placeholder:text-ink-mute outline-none focus:border-accent resize-none" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="flex-1 bg-accent text-background py-3 text-[11px] uppercase tracking-[0.14em] hover:bg-accent/90 transition-colors">
+                  Send Message
+                </button>
+                <button type="button" onClick={onClose} className="px-4 py-3 border border-line text-ink-dim text-[11px] uppercase tracking-[0.14em] hover:border-accent hover:text-accent transition-colors">
+                  Cancel
+                </button>
+              </div>
+              <p className="text-[10px] text-ink-mute text-center leading-relaxed">
+                We'll respond within 24 hours. Your information is kept private.
+              </p>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Pricing() {
-  return (
-    <section className="px-6 lg:px-10 pt-16 md:pt-20">
-      <div className="border-t border-line pt-6 mb-8">
-        <div className="label text-accent mb-2">/ PRICING</div>
-        <h2 className="font-serif text-2xl md:text-4xl text-ink">
-          Simple & Transparent
-        </h2>
-        <p className="mt-2 text-ink-dim text-[12px]">
-          All packages include hosting, updates, and support.
-        </p>
-      </div>
+  const { content } = useContent();
+  const [showForm, setShowForm] = useState(false);
+  const p = content;
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {tiers.map((tier) => (
-          <div
-            key={tier.name}
-            className={`corner border p-6 flex flex-col ${
-              tier.highlighted
-                ? "border-accent bg-accent/[0.03]"
-                : "border-line"
-            }`}
-          >
-            <div className="c1" /><div className="c2" />
-            {tier.highlighted && (
-              <div className="label text-accent mb-3">/ RECOMMENDED</div>
-            )}
-            <h3 className="font-serif text-xl text-ink">{tier.name}</h3>
-            <div className="mt-3">
-              <span className="font-serif text-3xl text-ink">{tier.price}</span>
-              <span className="text-[11px] text-ink-dim ml-2">{tier.period}</span>
-            </div>
-            <p className="text-[11px] text-ink-dim mt-2 leading-relaxed">{tier.desc}</p>
-            <ul className="mt-5 space-y-2.5 flex-1">
-              {tier.features.map((f, i) => (
-                <li key={i} className="flex items-start gap-2 text-[11px] text-ink-dim">
-                  <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${tier.highlighted ? "text-accent" : "text-ink-mute"}`} />
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
-            <a
-              href="#demo-chat"
-              className={`mt-6 block text-center px-4 py-3 text-[11px] uppercase tracking-[0.14em] transition-all ${
+  return (
+    <>
+      <section id="contact-form" className="px-6 lg:px-10 pt-16 md:pt-20">
+        <div className="border-t border-line pt-6 mb-8">
+          <div className="label text-accent mb-2">/ PRICING</div>
+          <h2 className="font-serif text-2xl md:text-4xl text-ink">
+            {p.pricingTitle}
+          </h2>
+          <p className="mt-2 text-ink-dim text-[12px]">
+            {p.pricingSubtitle}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {p.pricing.map((tier) => (
+            <div
+              key={tier.id}
+              className={`corner border p-6 flex flex-col ${
                 tier.highlighted
-                  ? "border border-accent bg-accent/10 text-accent hover:bg-accent hover:text-background"
-                  : "border border-line text-ink-dim hover:border-accent hover:text-accent"
+                  ? "border-accent bg-accent/[0.03]"
+                  : "border-line"
               }`}
             >
-              Get Started
-            </a>
-          </div>
-        ))}
-      </div>
-    </section>
+              <div className="c1" /><div className="c2" />
+              {tier.highlighted && (
+                <div className="label text-accent mb-3">/ RECOMMENDED</div>
+              )}
+              <h3 className="font-serif text-xl text-ink">{tier.name}</h3>
+              <div className="mt-3">
+                <span className="font-serif text-3xl text-ink">{tier.price}</span>
+                <span className="text-[11px] text-ink-dim ml-2">{tier.period}</span>
+              </div>
+              <p className="text-[11px] text-ink-dim mt-2 leading-relaxed">{tier.desc}</p>
+              <ul className="mt-5 space-y-2.5 flex-1">
+                {tier.features.map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-[11px] text-ink-dim">
+                    <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${tier.highlighted ? "text-accent" : "text-ink-mute"}`} />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => setShowForm(true)}
+                className={`mt-6 block text-center px-4 py-3 text-[11px] uppercase tracking-[0.14em] transition-all ${
+                  tier.highlighted
+                    ? "border border-accent bg-accent/10 text-accent hover:bg-accent hover:text-background"
+                    : "border border-line text-ink-dim hover:border-accent hover:text-accent"
+                }`}
+              >
+                {tier.buttonText}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {showForm && <ContactForm onClose={() => setShowForm(false)} />}
+    </>
   );
 }
 

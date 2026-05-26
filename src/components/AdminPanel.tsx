@@ -124,7 +124,7 @@ function ImageField({
 export function AdminPanel({ onClose }: { onClose: () => void }) {
   const { content, save, saving, reset } = useContent();
   const [c, setC] = useState<Content>(content);
-  const [tab, setTab] = useState<"header" | "hero" | "blog" | "portfolio" | "footer" | "socials" | "legal">("header");
+  const [tab, setTab] = useState<"header" | "hero" | "blog" | "portfolio" | "footer" | "socials" | "legal" | "pricing">("header");
   const [err, setErr] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const lastSavedJson = useRef(JSON.stringify(content));
@@ -225,7 +225,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
         {!err && syncing && <div className="label text-ink-dim mb-3">SYNCING TO BACKEND...</div>}
 
         <div className="flex gap-1 mb-4 border-b border-line">
-          {(["header", "hero", "blog", "portfolio", "footer", "socials", "legal"] as const).map((t) => (
+          {(["header", "hero", "blog", "portfolio", "pricing", "footer", "socials", "legal"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -544,6 +544,179 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
               className="label px-3 py-2 border border-line hover:border-accent"
             >
               + ADD APP
+            </button>
+          </div>
+        )}
+
+        {tab === "pricing" && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="section title"
+                value={c.pricingTitle}
+                onChange={(v) => upd("pricingTitle", v)}
+              />
+              <Field
+                label="section subtitle"
+                value={c.pricingSubtitle}
+                onChange={(v) => upd("pricingSubtitle", v)}
+              />
+            </div>
+            {c.pricing.map((tier, i) => (
+              <div key={tier.id} className="border border-line p-3 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="label">{tier.name}</span>
+                  <div className="flex gap-2">
+                    <button
+                      disabled={i === 0}
+                      onClick={() => {
+                        const arr = [...c.pricing];
+                        [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+                        void commit({ ...c, pricing: arr });
+                      }}
+                      className="label disabled:opacity-30"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      disabled={i === c.pricing.length - 1}
+                      onClick={() => {
+                        const arr = [...c.pricing];
+                        [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]];
+                        void commit({ ...c, pricing: arr });
+                      }}
+                      className="label disabled:opacity-30"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      onClick={() => {
+                        const next = { ...c, pricing: c.pricing.filter((_, j) => j !== i) };
+                        void commit(next);
+                      }}
+                      className="label text-accent"
+                    >
+                      DELETE
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field
+                    label="plan name"
+                    value={tier.name}
+                    onChange={(nv) =>
+                      upd(
+                        "pricing",
+                        c.pricing.map((p, j) => (j === i ? { ...p, name: nv } : p)),
+                      )
+                    }
+                  />
+                  <Field
+                    label="price"
+                    value={tier.price}
+                    onChange={(nv) =>
+                      upd(
+                        "pricing",
+                        c.pricing.map((p, j) => (j === i ? { ...p, price: nv } : p)),
+                      )
+                    }
+                  />
+                  <Field
+                    label="period"
+                    value={tier.period}
+                    onChange={(nv) =>
+                      upd(
+                        "pricing",
+                        c.pricing.map((p, j) => (j === i ? { ...p, period: nv } : p)),
+                      )
+                    }
+                  />
+                  <Field
+                    label="button text"
+                    value={tier.buttonText}
+                    onChange={(nv) =>
+                      upd(
+                        "pricing",
+                        c.pricing.map((p, j) => (j === i ? { ...p, buttonText: nv } : p)),
+                      )
+                    }
+                  />
+                  <div className="col-span-2">
+                    <Field
+                      area
+                      label="description"
+                      value={tier.desc}
+                      onChange={(nv) =>
+                        upd(
+                          "pricing",
+                          c.pricing.map((p, j) => (j === i ? { ...p, desc: nv } : p)),
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block">
+                      <span className="label block mb-1">features (one per line)</span>
+                      <textarea
+                        value={tier.features.join("\n")}
+                        onChange={(e) =>
+                          upd(
+                            "pricing",
+                            c.pricing.map((p, j) =>
+                              j === i ? { ...p, features: e.target.value.split("\n").filter(Boolean) } : p,
+                            ),
+                          )
+                        }
+                        rows={5}
+                        className="w-full bg-background border border-line p-2 text-ink font-mono text-[11px] focus:border-accent outline-none"
+                      />
+                    </label>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={tier.highlighted}
+                        onChange={(e) =>
+                          upd(
+                            "pricing",
+                            c.pricing.map((p, j) =>
+                              j === i ? { ...p, highlighted: e.target.checked } : p,
+                            ),
+                          )
+                        }
+                        className="accent-accent"
+                      />
+                      <span className="label">Recommended / Highlighted</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const next = {
+                  ...c,
+                  pricing: [
+                    ...c.pricing,
+                    {
+                      id: String(Date.now()),
+                      name: "New Plan",
+                      price: "₱0",
+                      period: "per month",
+                      desc: "Describe this plan",
+                      features: ["Feature 1", "Feature 2"],
+                      highlighted: false,
+                      buttonText: "Get Started",
+                      buttonLink: "#contact-form",
+                    },
+                  ],
+                };
+                void commit(next);
+              }}
+              className="label px-3 py-2 border border-line hover:border-accent"
+            >
+              + ADD PLAN
             </button>
           </div>
         )}
