@@ -1,8 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 
+type ContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
 type Message = {
   role: "user" | "assistant" | "system";
-  content: string;
+  content: string | ContentPart[];
 };
 
 const WORKSPACE_SYSTEM_PROMPT = `You are Hermes — an AI agent living in the merQato Agent Workspace at /workspace.
@@ -33,7 +37,6 @@ Your role:
 - Be friendly, warm, and practical — Palawan hospitality
 - Give concise, actionable answers (2-3 paragraphs max)
 - Sound like a knowledgeable local who knows hospitality inside out
-- If asked about your capabilities, explain: you can help with bookings, guest messages, menu digitization, operations, and marketing
 
 Rules:
 - Keep responses under 200 words unless asked for detail
@@ -41,10 +44,11 @@ Rules:
 - Be encouraging — Palawan small business owners are your people
 - Use simple, clear English`;
 
-const OPENROUTER_MODEL = "google/gemma-2-2b-it:free";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const LOVABLE_AI_MODEL = "google/gemini-2.5-flash";
+
+function getOpenRouterModel() {
+  return process.env.OPENROUTER_MODEL || "google/gemma-2-2b-it:free";
+}
 
 function getOllamaUrl() {
   return process.env.OLLAMA_URL || "http://localhost:11434";
@@ -55,24 +59,20 @@ function getOllamaModel() {
 }
 
 async function callOpenRouter(messages: Message[], systemPrompt: string) {
-  const openrouterKey =
-    process.env.OPENROUTER_API_KEY || process.env.openrouter_api_key;
-  if (!openrouterKey) return null;
+  const key = process.env.OPENROUTER_API_KEY || process.env.openrouter_api_key;
+  if (!key) return null;
 
   const response = await fetch(OPENROUTER_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${openrouterKey}`,
+      Authorization: `Bearer ${key}`,
       "HTTP-Referer": "https://merqato.digital",
       "X-Title": "Hermes Agent Workspace",
     },
     body: JSON.stringify({
-      model: OPENROUTER_MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
+      model: getOpenRouterModel(),
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
       max_tokens: 600,
     }),
   });
@@ -80,34 +80,6 @@ async function callOpenRouter(messages: Message[], systemPrompt: string) {
   if (!response.ok) {
     const errText = await response.text().catch(() => "");
     throw new Error(`OpenRouter HTTP ${response.status}: ${errText}`);
-  }
-
-  const json = await response.json();
-  return json.choices?.[0]?.message?.content || "";
-}
-
-async function callLovableAI(messages: Message[], systemPrompt: string) {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) return null;
-
-  const response = await fetch(LOVABLE_AI_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({
-      model: LOVABLE_AI_MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text().catch(() => "");
-    throw new Error(`Lovable AI HTTP ${response.status}: ${errText}`);
   }
 
   const json = await response.json();
@@ -122,25 +94,16 @@ async function callOllama(messages: Message[], systemPrompt: string) {
     body: JSON.stringify({
       model: getOllamaModel(),
       stream: false,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
     }),
   });
 
-  if (!response.ok) {
-    throw new Error(`Ollama HTTP ${response.status}`);
-  }
+  if (!response.ok) throw new Error(`Ollama HTTP ${response.status}`);
 
   const json = await response.json();
   return json.message?.content || "";
 }
 
-/**
- * Send a chat message to the AI and get a reply.
- * Uses OpenRouter in production, Ollama locally.
- */
 export const chatWithAgent = createServerFn({ method: "POST" })
   .inputValidator((input: { messages: Message[] }) => {
     if (!input?.messages?.length) throw new Error("Messages required");
@@ -148,20 +111,15 @@ export const chatWithAgent = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const recentMessages = data.messages.slice(-10);
-    const isWorkspace = recentMessages.some(
-      (m) => m.content?.includes("/workspace") || m.content?.includes("Hermes")
-    );
+    const isWorkspace = recentMessages.some((m) => {
+      const text = typeof m.content === "string"
+        ? m.content
+        : m.content.map((p) => (p.type === "text" ? p.text : "")).join(" ");
+      return text.includes("/workspace") || text.includes("Hermes");
+    });
     const systemPrompt = isWorkspace ? WORKSPACE_SYSTEM_PROMPT : AGENTS_SYSTEM_PROMPT;
 
-    // ── Try Lovable AI Gateway first (always available) ──
-    try {
-      const content = await callLovableAI(recentMessages, systemPrompt);
-      if (content) return { content, ok: true };
-    } catch (err) {
-      console.error("Lovable AI error:", err);
-    }
-
-    // ── Fallback: OpenRouter ──
+    // Try OpenRouter first
     try {
       const content = await callOpenRouter(recentMessages, systemPrompt);
       if (content) return { content, ok: true };
@@ -169,7 +127,7 @@ export const chatWithAgent = createServerFn({ method: "POST" })
       console.error("OpenRouter error:", err);
     }
 
-    // ── Fallback: Ollama ──
+    // Fallback: Ollama
     try {
       const content = await callOllama(recentMessages, systemPrompt);
       if (content) return { content, ok: true };
@@ -177,10 +135,8 @@ export const chatWithAgent = createServerFn({ method: "POST" })
       console.error("Ollama error:", err);
     }
 
-    // ── Both failed ──
     return {
-      content:
-        "⚠️ I'm having trouble connecting. I need either:\n\n1. **OpenRouter API key** — set OPENROUTER_API_KEY in your environment\n2. **Ollama running locally** — run `ollama serve` on your machine\n\nOnce either is set up, I'll be able to respond!",
+      content: "⚠️ I'm having trouble connecting. Set OPENROUTER_API_KEY or run Ollama locally (`ollama serve`).",
       ok: false,
     };
   });

@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { Json } from "@/integrations/supabase/types";
 
-const ADMIN_PASSKEY = "5309";
+const ADMIN_PASSKEY = process.env.ADMIN_PASSKEY ?? "5309";
 
 export const loadSiteContent = createServerFn({ method: "GET" }).handler(async () => {
   const { data, error } = await supabaseAdmin
@@ -65,14 +65,11 @@ export const deleteMedia = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     if (data.passkey !== ADMIN_PASSKEY) throw new Error("Unauthorized");
-
     const marker = "/storage/v1/object/public/media/";
     const markerIndex = data.url.indexOf(marker);
     if (markerIndex === -1) return { ok: true, deleted: false };
-
     const path = decodeURIComponent(data.url.slice(markerIndex + marker.length).split("?")[0]);
     if (!path || path.includes("..")) throw new Error("Invalid media path");
-
     const { error } = await supabaseAdmin.storage.from("media").remove([path]);
     if (error) throw new Error(error.message);
     return { ok: true, deleted: true };

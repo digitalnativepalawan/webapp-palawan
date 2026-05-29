@@ -4,10 +4,12 @@ import {
   ArrowUpRight, Camera, MessageCircle, ClipboardList,
   Wifi, Heart, Users, TrendingUp,
   Star, Check, CheckCircle2, ChevronRight, X, Globe, Mail, Building2,
-  Github, Triangle, Instagram, Twitter, Linkedin, Loader2,
+  Github, Triangle, Instagram, Twitter, Linkedin, Loader2, Paperclip,
 } from "lucide-react";
 import mqLogo from "@/assets/mq-logo.png";
 import { chatWithAgent } from "@/lib/agent.functions";
+import { useContent } from "@/store/content";
+import type { PricingTier } from "@/store/content";
 
 export const Route = createFileRoute("/agents")({
   component: AgentsPage,
@@ -222,11 +224,13 @@ const exampleQuestions = [
 
 function DemoChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [typingText, setTypingText] = useState("");
+  const [attachments, setAttachments] = useState<string[]>([]);
   const [messages, setMessages] = useState<
-    Array<{ role: string; content: string }>
+    Array<{ role: string; content: string; images?: string[] }>
   >([
     {
       role: "ai",
@@ -268,17 +272,36 @@ function DemoChat() {
   }, [messages, displayedTexts]);
 
   const askAI = useCallback(
-    async (userMessage: string) => {
-      const newMessages = [...messages, { role: "user" as const, content: userMessage }];
+    async (userMessage: string, images: string[] = []) => {
+      const newMessages = [
+        ...messages,
+        { role: "user" as const, content: userMessage, images },
+      ];
       setMessages(newMessages);
       setInput("");
+      setAttachments([]);
       setLoading(true);
 
       try {
-        const apiMessages = newMessages.map((m) => ({
-          role: (m.role === "ai" ? "assistant" : m.role) as "user" | "assistant" | "system",
-          content: m.content,
-        }));
+        const apiMessages = newMessages.map((m) => {
+          const role = (m.role === "ai" ? "assistant" : m.role) as
+            | "user"
+            | "assistant"
+            | "system";
+          if (m.images && m.images.length > 0) {
+            return {
+              role,
+              content: [
+                { type: "text" as const, text: m.content || "Please analyze the attached image(s)." },
+                ...m.images.map((url) => ({
+                  type: "image_url" as const,
+                  image_url: { url },
+                })),
+              ],
+            };
+          }
+          return { role, content: m.content };
+        });
         const res = await chatWithAgent({ data: { messages: apiMessages } });
         const reply = res.content || "Sorry, I couldn't process that.";
         setMessages((prev) => [...prev, { role: "ai", content: reply }]);
@@ -299,8 +322,28 @@ function DemoChat() {
   );
 
   const handleSend = () => {
-    if (!input.trim() || loading) return;
-    askAI(input.trim());
+    if (loading) return;
+    if (!input.trim() && attachments.length === 0) return;
+    askAI(input.trim(), attachments);
+  };
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files) return;
+    const imgs = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    imgs.forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`"${file.name}" exceeds 5MB and was skipped.`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        if (typeof result === "string") {
+          setAttachments((prev) => [...prev, result]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   return (
@@ -349,6 +392,18 @@ function DemoChat() {
                       : "border border-line-soft text-ink-dim"
                   }`}
                 >
+                  {msg.images && msg.images.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {msg.images.map((src, idx) => (
+                        <img
+                          key={idx}
+                          src={src}
+                          alt={`attachment ${idx + 1}`}
+                          className="max-h-32 max-w-[140px] object-cover border border-line-soft"
+                        />
+                      ))}
+                    </div>
+                  )}
                   {text}
                   {isLastAi && !fullyRevealed && displayedTexts[i] && (
                     <span className="inline-block w-1.5 h-4 bg-accent/60 ml-0.5 animate-pulse" />
@@ -386,20 +441,70 @@ function DemoChat() {
         </div>
 
         {/* Input */}
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-4 py-2.5 border-t border-line bg-surface/30">
+            {attachments.map((src, i) => (
+              <div key={i} className="relative group">
+                <img
+                  src={src}
+                  alt={`pending ${i + 1}`}
+                  className="h-16 w-16 object-cover border border-line-soft"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAttachments((prev) => prev.filter((_, idx) => idx !== i))
+                  }
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-background border border-line text-ink-dim hover:text-accent hover:border-accent flex items-center justify-center"
+                  aria-label="Remove image"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="flex border-t border-line">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              handleFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={loading}
+            className="px-3 py-3 border-r border-line text-ink-dim hover:text-accent hover:bg-accent/10 transition-colors disabled:opacity-40"
+            aria-label="Attach images"
+            title="Attach images"
+          >
+            <Paperclip className="w-4 h-4" />
+          </button>
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder={loading ? "Waiting for response..." : "Ask about bookings, operations, or marketing..."}
+            placeholder={
+              loading
+                ? "Waiting for response..."
+                : attachments.length > 0
+                ? "Add a question about the image(s)..."
+                : "Ask about bookings, operations, or marketing..."
+            }
             disabled={loading}
             className="flex-1 bg-background px-4 py-3 text-[12px] text-ink placeholder:text-ink-mute outline-none font-mono disabled:opacity-50"
           />
           <button
             type="button"
             onClick={handleSend}
-            disabled={loading || !input.trim()}
+            disabled={loading || (!input.trim() && attachments.length === 0)}
             className="px-5 py-3 border-l border-line text-[10px] uppercase tracking-[0.14em] text-accent hover:bg-accent/10 transition-colors disabled:opacity-40"
           >
             {loading ? "..." : "Send"}
@@ -509,7 +614,7 @@ function Pricing() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {p.pricing.map((tier) => (
+          {p.pricing.map((tier: PricingTier) => (
             <div
               key={tier.id}
               className={`corner border p-6 flex flex-col ${
@@ -529,7 +634,7 @@ function Pricing() {
               </div>
               <p className="text-[11px] text-ink-dim mt-2 leading-relaxed">{tier.desc}</p>
               <ul className="mt-5 space-y-2.5 flex-1">
-                {tier.features.map((f, i) => (
+                {tier.features.map((f: string, i: number) => (
                   <li key={i} className="flex items-start gap-2 text-[11px] text-ink-dim">
                     <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${tier.highlighted ? "text-accent" : "text-ink-mute"}`} />
                     <span>{f}</span>

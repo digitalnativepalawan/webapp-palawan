@@ -3,7 +3,7 @@ import { LockKeyhole, X } from "lucide-react";
 import { defaultContent, useContent, type Content } from "@/store/content";
 import { deleteMedia, uploadMedia } from "@/lib/content.functions";
 
-const ADMIN_PASSKEY = "5309";
+const ADMIN_PASSKEY = process.env.ADMIN_PASSKEY || "5309";
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
